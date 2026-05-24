@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer App - Painel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-refresh {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-refresh:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-clear {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #e53e3e;
+            transform: translateY(-2px);
+        }
+
+        .info {
+            background: white;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .dados-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .dados-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .dado-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .dado-item:hover {
+            background: #f7fafc;
+        }
+
+        .dado-item:last-child {
+            border-bottom: none;
+        }
+
+        .dado-timestamp {
+            font-size: 0.85em;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .dado-content {
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.95em;
+            word-break: break-all;
+            color: #2d3748;
+        }
+
+        .empty-message {
+            padding: 40px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 1.1em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status.online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status.offline {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 Transfer App</h1>
+            <p>Painel de Controle - Dados Recebidos do Celular</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn-refresh" onclick="carregarDados()">🔄 Atualizar</button>
+            <button class="btn-clear" onclick="limparDados()">🗑️ Limpar Tudo</button>
+            <div class="info">
+                Total de registros: <span id="total">0</span>
+            </div>
+            <div class="status online" id="status">● Online</div>
+        </div>
+
+        <div class="dados-container">
+            <div class="dados-list" id="dadosList">
+                <div class="empty-message">Nenhum dado recebido ainda...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Atualizar automaticamente a cada 3 segundos
+        setInterval(carregarDados, 3000);
+
+        function carregarDados() {
+            fetch('/dados')
+                .then(response => response.json())
+                .then(data => {
+                    atualizarUI(data.dados);
+                    document.getElementById('status').textContent = '● Online';
+                    document.getElementById('status').className = 'status online';
+                })
+                .catch(erro => {
+                    console.error('Erro:', erro);
+                    document.getElementById('status').textContent = '● Offline';
+                    document.getElementById('status').className = 'status offline';
+                });
+        }
+
+        function atualizarUI(dados) {
+            const lista = document.getElementById('dadosList');
+            const total = document.getElementById('total');
+
+            total.textContent = dados.length;
+
+            if (dados.length === 0) {
+                lista.innerHTML = '<div class="empty-message">Nenhum dado recebido ainda...</div>';
+                return;
+            }
+
+            lista.innerHTML = dados.reverse().map(dado => `
+                <div class="dado-item">
+                    <div class="dado-timestamp">⏰ ${dado.timestamp || 'Sem data'}</div>
+                    <div class="dado-content">${JSON.stringify(dado, null, 2)}</div>
+                </div>
+            `).join('');
+        }
+
+        function limparDados() {
+            if (confirm('Tem certeza que quer limpar todos os dados?')) {
+                fetch('/dados', { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('Dados limpados!');
+                        carregarDados();
+                    })
+                    .catch(erro => alert('Erro ao limpar: ' + erro));
+            }
+        }
+
+        // Carregar dados ao iniciar
+        carregarDados();
+    </script>
+</body>
+</html>
