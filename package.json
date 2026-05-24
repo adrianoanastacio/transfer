@@ -1,0 +1,16 @@
+{
+  "name": "transfer-app",
+  "version": "1.0.0",
+  "description": "Transferencia de dados via HTTP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
